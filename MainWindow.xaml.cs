@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -7,48 +9,6 @@ using System.Windows.Shapes;
 
 namespace collidingdots {	
 	
-	public class point {
-		public double x, y;
-		public double angle;
-		public Ellipse dot;
-		public Canvas currentcanvas;
-		public double travelDistance = 0.5;
-
-		public List<line> lines;
-
-		public point(double x, double y, double angle, double travelDistance, Canvas canvas) {
-			this.x = x;
-			this.y = y;
-			this.angle = angle;
-			this.travelDistance = travelDistance;
-
-			dot = new();
-			dot.Stroke = dot.Fill = Brushes.Black;
-			dot.Width = dot.Height = 4;
-
-			currentcanvas = canvas;
-			canvas.Children.Add(dot);
-			Canvas.SetLeft(dot, x);
-			Canvas.SetBottom(dot, y);
-		}
-
-		public void SetXY(double x, double y) {
-			Canvas.SetLeft(dot, x); this.x = x;
-			Canvas.SetBottom(dot, y); this.y = y;
-		}
-
-		public void Move() {
-			double futurex = x + (travelDistance * Math.Cos(angle));
-			double futurey = y + (travelDistance * Math.Sin(angle));
-
-			if (futurex < 0 || futurex > currentcanvas.ActualWidth)
-				angle = 3 * Math.PI - angle;
-			if (futurey < 0 || futurey > currentcanvas.ActualHeight)
-				angle = 2 * Math.PI - angle;
-
-			SetXY(x + (travelDistance * Math.Cos(angle)), y+(travelDistance*Math.Sin(angle)));
-		}
-	}
 
 	public class line {
 		public Line _line;
@@ -101,23 +61,78 @@ namespace collidingdots {
 	}
 
 	public partial class MainWindow : Window {
+
 		public MainWindow() {
 			InitializeComponent();
 			//InitializePoints();
 			//System.Windows.Media.CompositionTarget.Rendering += MovePoints2;
 		}
-				
+
+		public class point {
+			public double x, y;
+			public double angle;
+			public Ellipse dot;
+			public Canvas currentcanvas;
+			public double travelDistance = 0.5;
+
+			public List<line> lines;
+
+			public point(double x, double y, double angle, double travelDistance, Canvas canvas) {
+				this.x = x;
+				this.y = y;
+				this.angle = angle;
+				this.travelDistance = travelDistance;
+
+				dot = new();
+				dot.Stroke = dot.Fill = Brushes.Black;
+				dot.Width = dot.Height = 4;
+
+				currentcanvas = canvas;
+				canvas.Children.Add(dot);
+				Canvas.SetLeft(dot, x);
+				Canvas.SetBottom(dot, y);
+			}
+
+			public void SetXY(double x, double y) {
+				Canvas.SetLeft(dot, x); this.x = x;
+				Canvas.SetBottom(dot, y); this.y = y;
+			}
+
+			public void Move() {
+				double futurex = x + (travelDistance * Math.Cos(angle));
+				double futurey = y + (travelDistance * Math.Sin(angle));
+
+				if (futurex < 0 || futurex > currentcanvas.ActualWidth)
+					angle = 3 * Math.PI - angle;
+				if (futurey < 0 || futurey > currentcanvas.ActualHeight)
+					angle = 2 * Math.PI - angle;
+
+				SetXY(x + (travelDistance * Math.Cos(angle)), y + (travelDistance * Math.Sin(angle)));
+			}
+
+			public void ManageLines(List<point> points) {
+
+			}
+		}
 
 		public double speedMultiplier = 0.6;
 		public List<point>? points;
 		public int numberOfPoints =200;
 		public int radius = 10;
+		public int maxLineLength = 50; //in px
+
+		public List<point>[,] pointMatrix;
 
 		private void OnLoaded(object sender, RoutedEventArgs e) {
+			pointMatrix = new List<point>[(int)canvas.ActualWidth / maxLineLength, (int)(canvas.ActualHeight / maxLineLength)];
+			for (int i = 0; i < pointMatrix.GetLength(0); i++)
+				for (int j = 0; j < pointMatrix.GetLength(1); j++)
+					pointMatrix[i, j] = new List<point>();
+
 			InitializePoints();
 			//CompositionTarget.Rendering += MovePoints2;
 			CompositionTargetEx.Rendering += MovePoints2;
-			//line l = new(100, 200, 122, 323, canvas);
+			//line l = new(100, 100, 150, 100, canvas);
 			//l.SetXYXY(200, 330, 211, 444);
 		}
 
@@ -129,13 +144,23 @@ namespace collidingdots {
 				double randomx = random.NextInt64(0, (long)canvas.ActualWidth);
 				double randomy = random.NextInt64(0, (long)canvas.ActualHeight);
 				double angle = (double)random.NextDouble() * 2 * Math.PI;
-				points.Add(new point(randomx, randomy, angle, random.NextDouble() * speedMultiplier + 0.2, canvas));
+				var pointToAdd = new point(randomx, randomy, angle, random.NextDouble() * speedMultiplier + 0.2, canvas);
+				points.Add(pointToAdd);//new point(randomx, randomy, angle, random.NextDouble() * speedMultiplier + 0.2, canvas)
+				ManagePoints(pointToAdd);
 			}
 		}
 
 		public void MovePoints2(object sender, EventArgs e) {			
-			foreach (point currentPoint in points)
-				currentPoint.Move();
+			foreach (point currentPoint in points){
+				currentPoint.Move(); 
+				ManagePoints(currentPoint);
+			}
+		}
+
+
+		public void ManagePoints(point point) { //muta 
+			if(!pointMatrix[(int)point.x / maxLineLength, (int)point.y / maxLineLength].Contains(point))
+				pointMatrix[(int)point.x / maxLineLength, (int)point.y / maxLineLength].Add(point);
 		}
 	}
 }
