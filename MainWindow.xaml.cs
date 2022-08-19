@@ -19,13 +19,14 @@ namespace collidingdots {
 			this.y1 = y1;
 			this.y2 = y2;
 
-			_line = new();
-			_line.X1= x1;
-			_line.Y1= y1;
-			_line.X2= x2;
-			_line.Y2= y2;
-			_line.Stroke = Brushes.Black;
-			_line.StrokeThickness = 3;
+			_line = new() {
+				X1 = x1,
+				Y1 = y1,
+				X2 = x2,
+				Y2 = y2,
+				Stroke = Brushes.Black,
+				StrokeThickness = 3
+			};
 			canvas.Children.Add(_line);
 		}
 		public void SetXYXY(double x1, double y1, double x2, double y2) {
@@ -75,7 +76,10 @@ namespace collidingdots {
 			public Canvas currentcanvas;
 			public double travelDistance = 0.5;
 
-			public List<line> lines;
+			public int lasti, lastj;
+
+			public List<line> lines = new();
+			public List<point> pointsInProximity = new();
 
 			public point(double x, double y, double angle, double travelDistance, Canvas canvas) {
 				this.x = x;
@@ -110,9 +114,24 @@ namespace collidingdots {
 				SetXY(x + (travelDistance * Math.Cos(angle)), y + (travelDistance * Math.Sin(angle)));
 			}
 
-			public void ManageLines(List<point> points) {
-
+			public void ManageLines(List<point> points, List<point>[,] pointMatrix, double radius) {
+				foreach(point point in points) {
+					if (IsInCircle(point.x, point.y, this.x, this.y, radius) && !pointsInProximity.Contains(point))
+						pointsInProximity.Add(point);
+					if (!IsInCircle(point.x, point.y, this.x, this.y, radius) && pointsInProximity.Contains(point))
+						pointsInProximity.Remove(point);
+					
+				}
 			}
+		}
+
+		public static bool IsInCircle(double x, double y, double x0, double y0, double R) {
+			double dx = Math.Abs(x - x0);
+			if (dx > R) return true;
+			double dy = Math.Abs(y - y0);
+			if (dy > R) return false;
+			if (dx + dy <= R) return true;
+			return dx * dx + dy * dy <= R * R;
 		}
 
 		public double speedMultiplier = 0.6;
@@ -146,21 +165,31 @@ namespace collidingdots {
 				double angle = (double)random.NextDouble() * 2 * Math.PI;
 				var pointToAdd = new point(randomx, randomy, angle, random.NextDouble() * speedMultiplier + 0.2, canvas);
 				points.Add(pointToAdd);//new point(randomx, randomy, angle, random.NextDouble() * speedMultiplier + 0.2, canvas)
-				ManagePoints(pointToAdd);
+				Manage_pointMatrix(pointToAdd);
 			}
 		}
 
 		public void MovePoints2(object sender, EventArgs e) {			
 			foreach (point currentPoint in points){
-				currentPoint.Move(); 
-				ManagePoints(currentPoint);
+				currentPoint.Move();
+				Manage_pointMatrix(currentPoint);
+
+				List<point> points2 = new(points);
+				points2.Remove(currentPoint);
+				currentPoint.ManageLines(points2, pointMatrix, radius);
 			}
 		}
 
 
-		public void ManagePoints(point point) { //muta 
-			if(!pointMatrix[(int)point.x / maxLineLength, (int)point.y / maxLineLength].Contains(point))
-				pointMatrix[(int)point.x / maxLineLength, (int)point.y / maxLineLength].Add(point);
+		public void Manage_pointMatrix(point point) { //move the point in the arrays inside the grid matrix.
+			int i = (int)point.x / maxLineLength;
+			int j = (int)point.y / maxLineLength;
+			if (!pointMatrix[i, j].Contains(point)){
+				pointMatrix[i, j].Add(point);
+				pointMatrix[point.lasti, point.lastj].Remove(point);
+				point.lasti = i; point.lastj = j;
+			}
+
 		}
 	}
 }
