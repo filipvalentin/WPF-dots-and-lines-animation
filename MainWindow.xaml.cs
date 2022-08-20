@@ -39,6 +39,7 @@ namespace collidingdots {
 			InitializeComponent();
 			//InitializePoints();
 			//System.Windows.Media.CompositionTarget.Rendering += MovePoints2;
+			GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce; //does smth
 		}
 
 		public class line {
@@ -120,13 +121,13 @@ namespace collidingdots {
 				//Debug.WriteLine(futurey);
 			}
 
-			private void ForeachAddLine(int i, int j, List<point>[,] pointMatrix) {
+			private void ForeachAddLine(int i, int j, ref List<point>[,] pointMatrix) {
 				foreach (point point in pointMatrix[i, j])
 					if (IsInCircle(this.x, this.y, point.x, point.y, radius))
 						lines.Add(new(this.x, this.y, point.x, point.y, currentcanvas));
 			}
 
-			public void ManageLines(List<point> points, List<point>[,] pointMatrix, double radius, double maxLineLength) {
+			public void ManageLines(List<point>[,] pointMatrix, double radius, double maxLineLength) {
 
 				foreach (line line in lines)
 					line.DeleteLine(currentcanvas);
@@ -138,17 +139,17 @@ namespace collidingdots {
 					if (y < maxLineLength) {///top-left corner
 						for (int i = 0; i < 2; i++)
 							for (int j = 0; j < 2; j++)
-								ForeachAddLine(i, j, pointMatrix);
+								ForeachAddLine(i, j,ref pointMatrix);
 					}
 					if (y >= maxLineLength && y <= (currentcanvas.ActualHeight - maxLineLength)) {///left edge
 						for (int i = 0; i < 2; i++)
 							for (int j = (int)(this.y/maxLineLength) - 1; j <= (int)(this.y / maxLineLength) + 1; j++)
-								ForeachAddLine(i, j, pointMatrix);
+								ForeachAddLine(i, j, ref pointMatrix);
 					}
 					if (y > (currentcanvas.ActualHeight - maxLineLength) && y <= currentcanvas.ActualHeight) {
 						for (int i = 0; i < 2; i++)
 							for (int j = (int)(this.y / maxLineLength) - 1; j <= (int)(this.y / maxLineLength); j++)
-								ForeachAddLine(i, j, pointMatrix);
+								ForeachAddLine(i, j, ref pointMatrix);
 					}
 					
 				}
@@ -156,34 +157,34 @@ namespace collidingdots {
 					if (y < maxLineLength) {///top-right corner
 						for (int i = (int)(this.x / maxLineLength) - 1; i < currentcanvas.ActualWidth / maxLineLength; i++)
 							for (int j = 0; j < (int)(this.y / maxLineLength) + 1; j++)
-								ForeachAddLine(i, j, pointMatrix);
+								ForeachAddLine(i, j, ref pointMatrix);
 					}
 					if (y >= maxLineLength && y <= (currentcanvas.ActualHeight - maxLineLength)) { ///right edge
 						for (int i = (int)(this.x / maxLineLength) - 1; i < currentcanvas.ActualWidth/maxLineLength; i++)
 							for (int j = (int)(this.y / maxLineLength) - 1; j < (int)(this.y / maxLineLength) + 2; j++)
-								ForeachAddLine(i, j, pointMatrix);
+								ForeachAddLine(i, j, ref pointMatrix);
 					}
 					if (y > (currentcanvas.ActualHeight - maxLineLength) ) {//&& y <= currentcanvas.ActualHeight ///bottom-right corner
 						for (int i = (int)(this.x / maxLineLength) - 1; i < currentcanvas.ActualWidth / maxLineLength; i++)
 							for (int j = (int)(this.y / maxLineLength) - 1; j < (int)(currentcanvas.ActualHeight / maxLineLength); j++)
-								ForeachAddLine(i, j, pointMatrix);
+								ForeachAddLine(i, j, ref pointMatrix);
 					}
 				}
 				if (x >= maxLineLength && x <= (currentcanvas.ActualWidth - maxLineLength)) {///bottom edge
 					if (y >= 0 && y < maxLineLength) {
 						for (int i = (int)(this.x / maxLineLength) - 1; i < (int)(this.x / maxLineLength) + 2; i++)
 							for (int j = 0; j <= 1; j++)
-								ForeachAddLine(i, j, pointMatrix);
+								ForeachAddLine(i, j, ref pointMatrix);
 					}
 					if (y >= maxLineLength && y <= (currentcanvas.ActualHeight - maxLineLength)) { ///mid-section
 						for (int i = (int)(this.x / maxLineLength) - 1; i < (int)(this.x / maxLineLength) + 2; i++)
 							for (int j = (int)(this.y / maxLineLength) - 1; j < (int)(this.y / maxLineLength) + 2; j++)
-								ForeachAddLine(i, j, pointMatrix);
+								ForeachAddLine(i, j, ref pointMatrix);
 					}
 					if (y > (currentcanvas.ActualHeight - maxLineLength) && y <= currentcanvas.ActualHeight) { ///top edge
 						for (int i = (int)(this.x / maxLineLength) - 1; i < (int)(this.x / maxLineLength) + 2; i++)
 							for (int j = (int)(this.y / maxLineLength) - 1; j <= (int)(this.y / maxLineLength); j++)
-								ForeachAddLine(i, j, pointMatrix);
+								ForeachAddLine(i, j, ref pointMatrix);
 					}
 
 				}
@@ -218,13 +219,14 @@ namespace collidingdots {
 			InitializePoints();
 			
 			//CompositionTarget.Rendering += MovePoints2;
-			CompositionTargetEx.Rendering += MovePoints2;
+			CompositionTargetEx.Rendering += MovePoints;
+			//CompositionTarget.Rendering += Manage_pointMatrix_SeparateEvent;
 			//CompositionTargetEx.Rendering += Col;
 			//line l = new(50, 50, 100, 50, canvas);
 			//l.SetXYXY(200, 330, 211, 444);
 
-			GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-			GC.Collect();
+
+			//GC.Collect();
 		}
 
 
@@ -240,23 +242,27 @@ namespace collidingdots {
 			for (int i = 0; i < numberOfPoints; i++) {
 				double randomx = random.NextInt64(0, (long)canvas.ActualWidth);
 				double randomy = random.NextInt64(0, (long)canvas.ActualHeight);
-				double angle = (double)random.NextDouble() * 2 * Math.PI;
+				double angle = (double)random.NextDouble() * 2 * Math.PI + 0.1;
 				var pointToAdd = new point(randomx, randomy, angle, random.NextDouble() * speedMultiplier + 0.2);
 				points.Add(pointToAdd);//new point(randomx, randomy, angle, random.NextDouble() * speedMultiplier + 0.2, canvas)
 				Manage_pointMatrix(pointToAdd);
 			}
 		}
 
-		public void MovePoints2(object sender, EventArgs e) {
+		public void MovePoints(object sender, EventArgs e) {
 			foreach (point currentPoint in points) {
 				currentPoint.Move();
 				Manage_pointMatrix(currentPoint);
 
-				List<point> points2 = new(points);
-				points2.Remove(currentPoint);
-				currentPoint.ManageLines(points2, pointMatrix, maxLineLength, maxLineLength);
+				currentPoint.ManageLines(pointMatrix, maxLineLength, maxLineLength);
 			}
 		}
+		private void Manage_pointMatrix_SeparateEvent(object sender, EventArgs e) {
+			foreach (point currentPoint in points)
+				Manage_pointMatrix(currentPoint);
+			//GC.Collect();
+		}
+
 
 
 		public void Manage_pointMatrix(point point) { //move the point in the arrays inside the grid matrix.
