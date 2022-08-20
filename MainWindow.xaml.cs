@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -20,8 +21,10 @@ namespace collidingdots {
 				_FrameUpdating -= value;
 				if (_FrameUpdating == null)
 					CompositionTarget.Rendering -= CompositionTarget_Rendering;
+				GC.Collect();
 			}
 		}
+
 		static void CompositionTarget_Rendering(object sender, EventArgs e) {
 			RenderingEventArgs args = (RenderingEventArgs)e;
 			if (args.RenderingTime == _last)
@@ -51,7 +54,7 @@ namespace collidingdots {
 					Y1 = y1,//canvas.ActualHeight-
 					X2 = x2,
 					Y2 = y2,
-					Stroke = Brushes.Black,
+					Stroke = Brushes.DimGray,
 					StrokeThickness = 2.5
 				};
 				canvas.Children.Add(_line);
@@ -73,15 +76,18 @@ namespace collidingdots {
 			public double x, y;
 			public double angle;
 			public Ellipse dot;
-			public Canvas currentcanvas;
+			public static Canvas currentcanvas;
 			public double travelDistance = 0.5;
+			public static double radius;
 
 			public int lasti, lastj;
 
 			public List<line> lines = new();
 			public List<point> pointsInProximity = new();
 
-			public point(double x, double y, double angle, double travelDistance, Canvas canvas) {
+			//public static Canvas canvas;
+
+			public point(double x, double y, double angle, double travelDistance) {
 				this.x = x;
 				this.y = y;
 				this.angle = angle;
@@ -91,8 +97,7 @@ namespace collidingdots {
 				dot.Stroke = dot.Fill = Brushes.Black;
 				dot.Width = dot.Height = 4;
 
-				currentcanvas = canvas;
-				canvas.Children.Add(dot);
+				currentcanvas.Children.Add(dot);
 				Canvas.SetLeft(dot, x);
 				Canvas.SetTop(dot, y);
 			}
@@ -115,78 +120,91 @@ namespace collidingdots {
 				//Debug.WriteLine(futurey);
 			}
 
-			public void ManageLines(List<point> points, List<point>[,] pointMatrix, double radius, Canvas canvas, double maxLineLength) {
-				foreach (point point in points) {
-					if (IsInCircle(point.x, point.y, this.x, this.y, radius) && !pointsInProximity.Contains(point))
-						pointsInProximity.Add(point);
+			private void ForeachAddLine(int i, int j, List<point>[,] pointMatrix) {
+				foreach (point point in pointMatrix[i, j])
+					if (IsInCircle(this.x, this.y, point.x, point.y, radius))
+						lines.Add(new(this.x, this.y, point.x, point.y, currentcanvas));
+			}
 
-					if (!IsInCircle(point.x, point.y, this.x, this.y, radius) && pointsInProximity.Contains(point))
-						pointsInProximity.Remove(point);
-				}
+			public void ManageLines(List<point> points, List<point>[,] pointMatrix, double radius, double maxLineLength) {
 
 				foreach (line line in lines)
-					line.DeleteLine(canvas);
+					line.DeleteLine(currentcanvas);
 				lines.Clear();
+				//GC.Collect();
+
 
 				if (x < maxLineLength) {
-					if (y > (canvas.ActualHeight - maxLineLength) && y <= canvas.ActualHeight) {
-
-					}
-					if (y >= maxLineLength && y <= (canvas.ActualHeight - maxLineLength)) {
-
-					}
-					if (y < maxLineLength) {
+					if (y < maxLineLength) {///top-left corner
 						for (int i = 0; i < 2; i++)
 							for (int j = 0; j < 2; j++)
-								foreach (point point in pointMatrix[i, j])
-									lines.Add(new(this.x, this.y, point.x, point.y, canvas));
-
-						//for (int i = 0; i <= x / maxLineLength; i++)
-						//	for (int j = 0; j <= y / maxLineLength; j++)
-						//		//for (int j = (int)(canvas.ActualHeight / maxLineLength) - 1; j >= y / maxLineLength; j--)
-						//		foreach (point point in pointMatrix[i, j])
-						//			lines.Add(new(this.x, this.y, point.x, point.y, canvas));
+								ForeachAddLine(i, j, pointMatrix);
+					}
+					if (y >= maxLineLength && y <= (currentcanvas.ActualHeight - maxLineLength)) {///left edge
+						for (int i = 0; i < 2; i++)
+							for (int j = (int)(this.y/maxLineLength) - 1; j <= (int)(this.y / maxLineLength) + 1; j++)
+								ForeachAddLine(i, j, pointMatrix);
+					}
+					if (y > (currentcanvas.ActualHeight - maxLineLength) && y <= currentcanvas.ActualHeight) {
+						for (int i = 0; i < 2; i++)
+							for (int j = (int)(this.y / maxLineLength) - 1; j <= (int)(this.y / maxLineLength); j++)
+								ForeachAddLine(i, j, pointMatrix);
+					}
+					
+				}
+				if (x > (currentcanvas.ActualWidth - maxLineLength) && x <= currentcanvas.ActualWidth) {
+					if (y < maxLineLength) {///top-right corner
+						for (int i = (int)(this.x / maxLineLength) - 1; i < currentcanvas.ActualWidth / maxLineLength; i++)
+							for (int j = 0; j < (int)(this.y / maxLineLength) + 1; j++)
+								ForeachAddLine(i, j, pointMatrix);
+					}
+					if (y >= maxLineLength && y <= (currentcanvas.ActualHeight - maxLineLength)) { ///right edge
+						for (int i = (int)(this.x / maxLineLength) - 1; i < currentcanvas.ActualWidth/maxLineLength; i++)
+							for (int j = (int)(this.y / maxLineLength) - 1; j < (int)(this.y / maxLineLength) + 2; j++)
+								ForeachAddLine(i, j, pointMatrix);
+					}
+					if (y > (currentcanvas.ActualHeight - maxLineLength) ) {//&& y <= currentcanvas.ActualHeight ///bottom-right corner
+						for (int i = (int)(this.x / maxLineLength) - 1; i < currentcanvas.ActualWidth / maxLineLength; i++)
+							for (int j = (int)(this.y / maxLineLength) - 1; j < (int)(currentcanvas.ActualHeight / maxLineLength); j++)
+								ForeachAddLine(i, j, pointMatrix);
 					}
 				}
-				if (x > (canvas.ActualWidth - maxLineLength) && x <= canvas.ActualWidth) {
-					if (y >= 0 && y < maxLineLength) { // y>=0 poate fi scos
-
-					}
-					if (y >= maxLineLength && y <= (canvas.ActualWidth - maxLineLength)) {
-
-					}
-					if (y > (canvas.ActualWidth - maxLineLength) && y <= canvas.ActualWidth) {
-
-					}
-				}
-				if (x >= maxLineLength && x <= (canvas.ActualWidth - maxLineLength)) {
+				if (x >= maxLineLength && x <= (currentcanvas.ActualWidth - maxLineLength)) {///bottom edge
 					if (y >= 0 && y < maxLineLength) {
-
+						for (int i = (int)(this.x / maxLineLength) - 1; i < (int)(this.x / maxLineLength) + 2; i++)
+							for (int j = 0; j <= 1; j++)
+								ForeachAddLine(i, j, pointMatrix);
 					}
-					if (y >= maxLineLength && y <= (canvas.ActualWidth - maxLineLength)) {
-
+					if (y >= maxLineLength && y <= (currentcanvas.ActualHeight - maxLineLength)) { ///mid-section
+						for (int i = (int)(this.x / maxLineLength) - 1; i < (int)(this.x / maxLineLength) + 2; i++)
+							for (int j = (int)(this.y / maxLineLength) - 1; j < (int)(this.y / maxLineLength) + 2; j++)
+								ForeachAddLine(i, j, pointMatrix);
 					}
-					if (y > (canvas.ActualWidth - maxLineLength) && y <= canvas.ActualWidth) {
-
+					if (y > (currentcanvas.ActualHeight - maxLineLength) && y <= currentcanvas.ActualHeight) { ///top edge
+						for (int i = (int)(this.x / maxLineLength) - 1; i < (int)(this.x / maxLineLength) + 2; i++)
+							for (int j = (int)(this.y / maxLineLength) - 1; j <= (int)(this.y / maxLineLength); j++)
+								ForeachAddLine(i, j, pointMatrix);
 					}
 
 				}
 			}
 		}
-
+		public static bool IsInCircle2(double x0, double y0, double x, double y, double R) {
+			return Math.Pow(x-x0,2)+Math.Pow(y-y0,2)<Math.Pow(R,2);
+		}
 		public static bool IsInCircle(double x0, double y0, double x, double y, double R) {
-			double dx = Math.Abs(x - x0);
-			if (dx > R) return true;
-			double dy = Math.Abs(y - y0);
+			double dx = x - x0;
+			if (dx > R) return false;
+			double dy = y - y0;
 			if (dy > R) return false;
-			if (dx + dy <= R) return true;
+			//if (dx + dy <= R) return false;
 			return dx * dx + dy * dy <= R * R;
 		}
 
 		public double speedMultiplier = 0.6;
 		public List<point>? points;
-		public int numberOfPoints = 200;
-		public int radius = 10;
+		public int numberOfPoints = 150;
+		//public int radius = 5;
 		public int maxLineLength = 50; //in px
 
 		public List<point>[,] pointMatrix;
@@ -196,17 +214,25 @@ namespace collidingdots {
 			for (int i = 0; i < pointMatrix.GetLength(0); i++)
 				for (int j = 0; j < pointMatrix.GetLength(1); j++)
 					pointMatrix[i, j] = new List<point>();
-
+			
 			InitializePoints();
-
+			
 			//CompositionTarget.Rendering += MovePoints2;
 			CompositionTargetEx.Rendering += MovePoints2;
-			//line l = new(100, 100, 200, 200, canvas);
+			//CompositionTargetEx.Rendering += Col;
+			//line l = new(50, 50, 100, 50, canvas);
 			//l.SetXYXY(200, 330, 211, 444);
+
+			GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
+			GC.Collect();
 		}
 
+
+
 		public void InitializePoints() {
-			
+			point.currentcanvas = canvas;
+			point.radius = maxLineLength;
+
 			points = new List<point>();
 			var random = new Random();
 			//points.Add(new(100, 100, 0.5, 1, canvas));
@@ -215,7 +241,7 @@ namespace collidingdots {
 				double randomx = random.NextInt64(0, (long)canvas.ActualWidth);
 				double randomy = random.NextInt64(0, (long)canvas.ActualHeight);
 				double angle = (double)random.NextDouble() * 2 * Math.PI;
-				var pointToAdd = new point(randomx, randomy, angle, random.NextDouble() * speedMultiplier + 0.2, canvas);
+				var pointToAdd = new point(randomx, randomy, angle, random.NextDouble() * speedMultiplier + 0.2);
 				points.Add(pointToAdd);//new point(randomx, randomy, angle, random.NextDouble() * speedMultiplier + 0.2, canvas)
 				Manage_pointMatrix(pointToAdd);
 			}
@@ -228,7 +254,7 @@ namespace collidingdots {
 
 				List<point> points2 = new(points);
 				points2.Remove(currentPoint);
-				currentPoint.ManageLines(points2, pointMatrix, radius, canvas, maxLineLength);
+				currentPoint.ManageLines(points2, pointMatrix, maxLineLength, maxLineLength);
 			}
 		}
 
