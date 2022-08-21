@@ -36,8 +36,7 @@ namespace collidingdots {
 
 		public MainWindow() {
 			InitializeComponent();
-			//InitializePoints();
-			//System.Windows.Media.CompositionTarget.Rendering += MovePoints2;
+
 			GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce; //does smth
 		}
 
@@ -47,20 +46,20 @@ namespace collidingdots {
 			public point pointingFrom, pointingTo;
 			public static Canvas canvas;
 			public static double lineThickness;
-			public line(double x1, double y1, double x2, double y2, point pointingTo) {//
-				this.x1 = x1; this.x2 = x2; this.y1 = y1; this.y2 = y2;
-				this.pointingTo = pointingTo;
+			//public line(double x1, double y1, double x2, double y2, point pointingTo) {//
+			//	this.x1 = x1; this.x2 = x2; this.y1 = y1; this.y2 = y2;
+			//	this.pointingTo = pointingTo;
 
-				_line = new() {
-					X1 = x1,
-					Y1 = y1,
-					X2 = x2,
-					Y2 = y2,
-					Stroke = Brushes.DimGray,
-					StrokeThickness = lineThickness
-				};
-				canvas.Children.Add(_line);
-			}
+			//	_line = new() {
+			//		X1 = x1,
+			//		Y1 = y1,
+			//		X2 = x2,
+			//		Y2 = y2,
+			//		Stroke = Brushes.DimGray,
+			//		StrokeThickness = lineThickness
+			//	};
+			//	canvas.Children.Add(_line);
+			//}
 			public line(point pointingFrom, point pointingTo) {//
 				this.x1 = pointingFrom.x; this.y1 = pointingFrom.y;
 				this.x2 = pointingTo.x; this.y2 = pointingTo.y;
@@ -173,7 +172,6 @@ namespace collidingdots {
 						else //else I will create one
 							if (point.lines.Find(x => x.pointingFrom == this) == null)//but only if the other point doesn't have another line assigned already
 							lines.Add(new(this, point));
-						//lines.Add(new(this.x, this.y, point.x, point.y, currentcanvas, point));
 					}
 					else if (currentLine != null) { //if there's a line assigned to a point which is not inside the point's circle, I will delete it.
 						currentLine.DeleteLine();
@@ -186,7 +184,7 @@ namespace collidingdots {
 				foreach (line line in lines) //now I check if there are lines of which end point went outside the point's circle
 					if (!IsInCircle(this.x, this.y, line.pointingTo.x, line.pointingTo.y, radius))
 						line.DeleteLine();
-				
+
 				lines.RemoveAll(x => !IsInCircle(this.x, this.y, x.pointingTo.x, x.pointingTo.y, radius)); //and delete them since I can't call Remove inside foreach [altering the List at runtime]
 
 			}
