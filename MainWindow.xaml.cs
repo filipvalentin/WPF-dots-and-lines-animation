@@ -46,6 +46,7 @@ namespace collidingdots {
 			public point pointingFrom, pointingTo;
 			public static Canvas canvas;
 			public static double lineThickness;
+<<<<<<< HEAD
 			//public line(double x1, double y1, double x2, double y2, point pointingTo) {//
 			//	this.x1 = x1; this.x2 = x2; this.y1 = y1; this.y2 = y2;
 			//	this.pointingTo = pointingTo;
@@ -60,6 +61,22 @@ namespace collidingdots {
 			//	};
 			//	canvas.Children.Add(_line);
 			//}
+=======
+			public line(double x1, double y1, double x2, double y2, point pointingTo) {//
+				this.x1 = x1; this.x2 = x2; this.y1 = y1; this.y2 = y2;
+				this.pointingTo = pointingTo;
+
+				_line = new() {
+					X1 = x1,
+					Y1 = y1,
+					X2 = x2,
+					Y2 = y2,
+					Stroke = Brushes.DimGray,
+					StrokeThickness = lineThickness
+				};
+				canvas.Children.Add(_line);
+			}
+>>>>>>> cf42c8dc17efd24bd284a1dac8332be0fdeee309
 			public line(point pointingFrom, point pointingTo) {//
 				this.x1 = pointingFrom.x; this.y1 = pointingFrom.y;
 				this.x2 = pointingTo.x; this.y2 = pointingTo.y;
@@ -181,11 +198,21 @@ namespace collidingdots {
 
 				}
 
+<<<<<<< HEAD
 				foreach (line line in lines) //now I check if there are lines of which end point went outside the point's circle
 					if (!IsInCircle(this.x, this.y, line.pointingTo.x, line.pointingTo.y, radius))
 						line.DeleteLine();
 
 				lines.RemoveAll(x => !IsInCircle(this.x, this.y, x.pointingTo.x, x.pointingTo.y, radius)); //and delete them since I can't call Remove inside foreach [altering the List at runtime]
+=======
+				
+
+				foreach (line line in lines)
+					if (!IsInCircle(this.x, this.y, line.pointingTo.x, line.pointingTo.y, radius))
+						line.DeleteLine();
+				
+				lines.RemoveAll(x => !IsInCircle(this.x, this.y, x.pointingTo.x, x.pointingTo.y, radius));
+>>>>>>> cf42c8dc17efd24bd284a1dac8332be0fdeee309
 
 			}
 
@@ -203,15 +230,24 @@ namespace collidingdots {
 							for (int j = (int)(this.y / maxLineLength) - 1; j <= (int)(this.y / maxLineLength) + 1; j++)
 								ForeachManageLines(i, j, ref pointMatrix);
 					}
+<<<<<<< HEAD
 					if (y >= (currentcanvas.ActualHeight - maxLineLength)) { ///bottom-left corner
+=======
+					if (y >= (currentcanvas.ActualHeight - maxLineLength)) {//&& y <= currentcanvas.ActualHeight
+>>>>>>> cf42c8dc17efd24bd284a1dac8332be0fdeee309
 						for (int i = 0; i < 2; i++)
 							for (int j = (int)(this.y / maxLineLength) - 1; j <= (int)(this.y / maxLineLength); j++)
 								ForeachManageLines(i, j, ref pointMatrix);
 					}
 
 				}
+<<<<<<< HEAD
 				if (x > maxLineLength && x < (currentcanvas.ActualWidth - maxLineLength)) {
 					if (y <= maxLineLength) { ///bottom edge
+=======
+				if (x > maxLineLength && x < (currentcanvas.ActualWidth - maxLineLength)) {///bottom edge
+					if (y <= maxLineLength) {//y >= 0 &&
+>>>>>>> cf42c8dc17efd24bd284a1dac8332be0fdeee309
 						for (int i = (int)(this.x / maxLineLength) - 1; i < (int)(this.x / maxLineLength) + 2; i++)
 							for (int j = 0; j <= 1; j++)
 								ForeachManageLines(i, j, ref pointMatrix);
@@ -221,14 +257,22 @@ namespace collidingdots {
 							for (int j = (int)(this.y / maxLineLength) - 1; j < (int)(this.y / maxLineLength) + 2; j++)
 								ForeachManageLines(i, j, ref pointMatrix);
 					}
+<<<<<<< HEAD
 					if (y >= (currentcanvas.ActualHeight - maxLineLength)) { ///top edge
+=======
+					if (y >= (currentcanvas.ActualHeight - maxLineLength)) {//&& y <= currentcanvas.ActualHeight ///top edge
+>>>>>>> cf42c8dc17efd24bd284a1dac8332be0fdeee309
 						for (int i = (int)(this.x / maxLineLength) - 1; i < (int)(this.x / maxLineLength) + 2; i++)
 							for (int j = (int)(this.y / maxLineLength) - 1; j < (int)(currentcanvas.ActualHeight / maxLineLength); j++)
 								ForeachManageLines(i, j, ref pointMatrix);
 					}
 
 				}
+<<<<<<< HEAD
 				if (x >= (currentcanvas.ActualWidth - maxLineLength)) {
+=======
+				if (x >= (currentcanvas.ActualWidth - maxLineLength)) {//&& x <= currentcanvas.ActualWidth
+>>>>>>> cf42c8dc17efd24bd284a1dac8332be0fdeee309
 					if (y <= maxLineLength) {///top-right corner
 						for (int i = (int)(this.x / maxLineLength) - 1; i < currentcanvas.ActualWidth / maxLineLength; i++)
 							for (int j = 0; j < (int)(this.y / maxLineLength) + 1; j++)
@@ -239,7 +283,11 @@ namespace collidingdots {
 							for (int j = (int)(this.y / maxLineLength) - 1; j < (int)(this.y / maxLineLength) + 2; j++)
 								ForeachManageLines(i, j, ref pointMatrix);
 					}
+<<<<<<< HEAD
 					if (y >= (currentcanvas.ActualHeight - maxLineLength)) {///bottom-right corner
+=======
+					if (y >= (currentcanvas.ActualHeight - maxLineLength)) {//&& y <= currentcanvas.ActualHeight ///bottom-right corner
+>>>>>>> cf42c8dc17efd24bd284a1dac8332be0fdeee309
 						for (int i = (int)(this.x / maxLineLength) - 1; i < currentcanvas.ActualWidth / maxLineLength; i++)
 							for (int j = (int)(this.y / maxLineLength) - 1; j < (int)(currentcanvas.ActualHeight / maxLineLength); j++)
 								ForeachManageLines(i, j, ref pointMatrix);
@@ -274,7 +322,20 @@ namespace collidingdots {
 
 			InitializePoints();
 
+<<<<<<< HEAD
 			CompositionTargetEx.Rendering += MovePoints; //the heart which makes this program work
+=======
+			//CompositionTarget.Rendering += MovePoints2;
+			CompositionTargetEx.Rendering += MovePoints;
+			//CompositionTargetEx.Rendering += Manage_pointMatrix_SeparateEvent;
+			//CompositionTargetEx.Rendering += Col;
+			//line l = new(100, 0, 100, 400, null);
+			//point p = new(100, 20, 0, 0);
+			//l.SetXYXY(200, 330, 211, 444);
+
+
+			//GC.Collect();
+>>>>>>> cf42c8dc17efd24bd284a1dac8332be0fdeee309
 		}
 
 		public void InitializePoints() {
@@ -307,7 +368,10 @@ namespace collidingdots {
 			}
 		}
 
+<<<<<<< HEAD
 		/*
+=======
+>>>>>>> cf42c8dc17efd24bd284a1dac8332be0fdeee309
 		private void Manage_pointMatrix_SeparateEvent(object sender, EventArgs e) {// !!!nope
 
 			List<line>? toDelete = null;
@@ -326,7 +390,11 @@ namespace collidingdots {
 			if (toDelete != null)
 				toDelete.Clear();
 		}
+<<<<<<< HEAD
 		*/
+=======
+
+>>>>>>> cf42c8dc17efd24bd284a1dac8332be0fdeee309
 
 		public void Manage_pointMatrix(point point) { //move the point in the arrays inside the grid matrix.
 			int i = (int)point.x / maxLineLength;
