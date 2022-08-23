@@ -1,10 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Xml.Linq;
+using System.Xml;
+using System.Xml.Serialization;
 
 namespace collidingdots {
 	public static class CompositionTargetEx {
@@ -259,14 +264,17 @@ namespace collidingdots {
 			return dx * dx + dy * dy <= R * R;
 		}
 
-		public double speedMultiplier = 0.6;//0.6
+		public double speedMultiplier;//0.6
 		public List<point>? points;
-		public int numberOfPoints = 250;
-		public int maxLineLength = 50; //in px
+		public int numberOfPoints; //250
+		public int maxLineLength; //in px
 
 		public List<point>[,] pointMatrix;
 
 		private void OnLoaded(object sender, RoutedEventArgs e) {
+
+			InitializeVariables();
+
 			pointMatrix = new List<point>[(int)canvas.ActualWidth / maxLineLength, (int)(canvas.ActualHeight / maxLineLength)];
 			for (int i = 0; i < pointMatrix.GetLength(0); i++)
 				for (int j = 0; j < pointMatrix.GetLength(1); j++)
@@ -278,11 +286,8 @@ namespace collidingdots {
 		}
 
 		public void InitializePoints() {
-			point.currentcanvas = canvas;
+			point.currentcanvas = line.canvas = canvas;
 			point.radius = maxLineLength;
-			point.dotRadius = 2;
-			line.canvas = canvas;
-			line.lineThickness = 2;
 
 			points = new List<point>();
 			var random = new Random();
@@ -338,5 +343,69 @@ namespace collidingdots {
 			}
 		}
 
+		[Serializable]
+		public class Variables {
+			public double speedMultiplier;//0.6
+			public int numberOfPoints;
+			public int maxLineLength; //in px
+
+			public double dotRadius;
+			public double lineThickness;
+		}
+
+		public void InitializeVariables() {
+			string filepath = new(Directory.GetCurrentDirectory() + @"\variables.xml");
+			if (File.Exists(filepath)) {
+				var readVariables = ReadFromXmlFile<Variables>(filepath);
+				if(readVariables != null) {
+					speedMultiplier = readVariables.speedMultiplier;
+					numberOfPoints = readVariables.numberOfPoints;
+					maxLineLength = readVariables.maxLineLength;
+					point.dotRadius = readVariables.dotRadius;
+					line.lineThickness = readVariables.lineThickness;
+				}
+				else Close();
+			}
+			else {
+				var toSave = new Variables();
+				toSave.speedMultiplier = speedMultiplier = 2;
+				toSave.numberOfPoints = numberOfPoints = 200;
+				toSave.maxLineLength = maxLineLength = 50;
+				toSave.dotRadius = point.dotRadius = 2;
+				toSave.lineThickness = line.lineThickness = 2;
+
+				WriteToXmlFile<Variables>(filepath, toSave);
+			}
+		}
+
+		public static void WriteToXmlFile<T>(string filePath, T objectToWrite, bool append = false) where T : new() {
+			TextWriter writer = null;
+			try {
+				var serializer = new XmlSerializer(typeof(T));
+				writer = new StreamWriter(filePath, append);
+				using (var xmlWriter = XmlWriter.Create(writer, new XmlWriterSettings { Indent = true })) {
+					serializer.Serialize(xmlWriter, objectToWrite);
+				}
+				//serializer.Serialize(writer, objectToWrite);
+			}
+			finally {
+				if (writer != null)
+					writer.Close();
+			}
+		}
+		public static T ReadFromXmlFile<T>(string filePath) where T : new() {
+			TextReader reader = null;
+			try {
+				var serializer = new XmlSerializer(typeof(T));
+				reader = new StreamReader(filePath);
+				return (T)serializer.Deserialize(reader);
+			}
+			finally {
+				if (reader != null)
+					reader.Close();
+			}
+		}
 	}
+
+
 }
