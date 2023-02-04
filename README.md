@@ -1,2 +1,2 @@
 # dots-and-lines-animation
-![](example.gif)
+![](demogif.gif)
