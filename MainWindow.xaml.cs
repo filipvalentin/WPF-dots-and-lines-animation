@@ -1,13 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime;
-using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using System.Xml.Linq;
 using System.Xml;
 using System.Xml.Serialization;
 
@@ -51,24 +49,13 @@ namespace collidingdots {
 			public point pointingFrom, pointingTo;
 			public static Canvas canvas;
 			public static double lineThickness;
-			//public line(double x1, double y1, double x2, double y2, point pointingTo) {//
-			//	this.x1 = x1; this.x2 = x2; this.y1 = y1; this.y2 = y2;
-			//	this.pointingTo = pointingTo;
 
-			//	_line = new() {
-			//		X1 = x1,
-			//		Y1 = y1,
-			//		X2 = x2,
-			//		Y2 = y2,
-			//		Stroke = Brushes.DimGray,
-			//		StrokeThickness = lineThickness
-			//	};
-			//	canvas.Children.Add(_line);
-			//}
 			public line(point pointingFrom, point pointingTo) {//
 				this.x1 = pointingFrom.x; this.y1 = pointingFrom.y;
 				this.x2 = pointingTo.x; this.y2 = pointingTo.y;
 				this.pointingFrom = pointingFrom; this.pointingTo = pointingTo;
+
+				var random = new Random();
 
 				_line = new() {
 					X1 = x1,
@@ -76,7 +63,7 @@ namespace collidingdots {
 					X2 = x2,
 					Y2 = y2,
 					Stroke = Brushes.DimGray,
-					StrokeThickness = 2.3
+					StrokeThickness = random.NextDouble()+random.NextDouble()+0.3,
 				};
 				canvas.Children.Add(_line);
 			}
@@ -114,7 +101,6 @@ namespace collidingdots {
 			public List<line> lines = new();
 			public List<point> pointsInProximity = new();
 
-			//public static Canvas canvas;
 
 			public point(double x, double y, double angle, double travelDistance) {
 				dot = new();
@@ -275,7 +261,7 @@ namespace collidingdots {
 
 			InitializeVariables();
 
-			pointMatrix = new List<point>[(int)canvas.ActualWidth / maxLineLength, (int)(canvas.ActualHeight / maxLineLength)];
+			pointMatrix = new List<point>[(int)(canvas.ActualWidth / maxLineLength), (int)(canvas.ActualHeight / maxLineLength)];
 			for (int i = 0; i < pointMatrix.GetLength(0); i++)
 				for (int j = 0; j < pointMatrix.GetLength(1); j++)
 					pointMatrix[i, j] = new List<point>(); //every cell has to be initialized
