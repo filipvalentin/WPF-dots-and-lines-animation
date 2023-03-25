@@ -1,2 +1,2 @@
-# dots-and-lines-animation
+# WPF-dots-and-lines-animation
 ![](demogif.gif)
